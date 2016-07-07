@@ -21,6 +21,7 @@ package org.apache.sshd.client.channel;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -83,7 +84,7 @@ public abstract class AbstractClientChannel extends AbstractChannel implements C
     protected OpenFuture openFuture;
 
     protected AbstractClientChannel(String type) {
-        this(type, Collections.<RequestHandler<Channel>>emptyList());
+        this(type, Collections.<RequestHandler<Channel>> emptyList());
     }
 
     protected AbstractClientChannel(String type, Collection<? extends RequestHandler<Channel>> handlers) {
@@ -206,6 +207,7 @@ public abstract class AbstractClientChannel extends AbstractChannel implements C
     @Override
     public Set<ClientChannelEvent> waitFor(Collection<ClientChannelEvent> mask, long timeout) {
         ValidateUtils.checkNotNull(mask, "No mask specified");
+        log.info("MY - waitFor: {}", Arrays.toString(mask.toArray()));
         long t = 0;
         synchronized (lock) {
             for (Set<ClientChannelEvent> cond = EnumSet.noneOf(ClientChannelEvent.class);; cond.clear()) {
@@ -305,6 +307,7 @@ public abstract class AbstractClientChannel extends AbstractChannel implements C
             throw new SshException("Session has been closed");
         }
 
+        log.info("MY - new openFuture");
         openFuture = new DefaultOpenFuture(lock);
         if (log.isDebugEnabled()) {
             log.debug("open({}) Send SSH_MSG_CHANNEL_OPEN - type={}", this, type);
@@ -341,6 +344,7 @@ public abstract class AbstractClientChannel extends AbstractChannel implements C
             doOpen();
 
             listener.channelOpenSuccess(this);
+            log.info("MY - openened.set(true), openFuture.setOpened()");
             this.opened.set(true);
             this.openFuture.setOpened();
         } catch (Throwable t) {
@@ -365,6 +369,7 @@ public abstract class AbstractClientChannel extends AbstractChannel implements C
                 }
             }
 
+            log.info("MY - openFuture.setException(e), closeFuture.setClosed()");
             this.openFuture.setException(e);
             this.closeFuture.setClosed();
             this.doCloseImmediately();
@@ -388,6 +393,7 @@ public abstract class AbstractClientChannel extends AbstractChannel implements C
         this.openFailureReason = reason;
         this.openFailureMsg = msg;
         this.openFailureLang = lang;
+        log.info("MY - openFuture.setException(...), closeFuture.setClosed()");
         this.openFuture.setException(new SshException(msg));
         this.closeFuture.setClosed();
         this.doCloseImmediately();
